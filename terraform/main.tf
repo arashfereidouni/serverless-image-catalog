@@ -117,3 +117,54 @@ resource "aws_iam_role_policy" "lambda_policy" {
     ]
   })
 }
+
+# Lambda deployment package
+data "archive_file" "lambda_zip" {
+  type        = "zip"
+  source_file = "../lambda/image_analyzer.py"
+  output_path = "../lambda/image_analyzer.zip"
+}
+
+# Lambda function
+resource "aws_lambda_function" "image_analyzer" {
+  filename         = data.archive_file.lambda_zip.output_path
+  function_name    = "${var.project_name}-image-analyzer"
+  role            = aws_iam_role.lambda_role.arn
+  handler         = "image_analyzer.lambda_handler"
+  runtime         = "python3.9"
+  source_code_hash = data.archive_file.lambda_zip.output_base64sha256
+
+  environment {
+    variables = {
+      DYNAMODB_TABLE = aws_dynamodb_table.image_metadata.name
+    }
+  }
+}
+
+# S3 bucket notification
+resource "aws_s3_bucket_notification" "image_upload" {
+  bucket = aws_s3_bucket.images.id
+
+  lambda_function {
+    lambda_function_arn = aws_lambda_function.image_analyzer.arn
+    events              = ["s3:ObjectCreated:*"]
+    filter_suffix       = ".jpg"
+  }
+
+  lambda_function {
+    lambda_function_arn = aws_lambda_function.image_analyzer.arn
+    events              = ["s3:ObjectCreated:*"]
+    filter_suffix       = ".png"
+  }
+
+  depends_on = [aws_lambda_permission.s3_invoke]
+}
+
+# Lambda permission for S3 to invoke function
+resource "aws_lambda_permission" "s3_invoke" {
+  statement_id  = "AllowExecutionFromS3Bucket"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.image_analyzer.function_name
+  principal     = "s3.amazonaws.com"
+  source_arn    = aws_s3_bucket.images.arn
+}
