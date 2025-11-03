@@ -30,14 +30,16 @@ jobs:
         role-session-name: GitHubActions
         aws-region: us-east-1
 
+    - name: Terraform Init
+      run: terraform init
+      working-directory: terraform
+
     - name: Terraform Format Check
       run: terraform fmt -check -recursive
       working-directory: terraform
 
     - name: Terraform Validate
-      run: |
-        terraform init
-        terraform validate
+      run: terraform validate
       working-directory: terraform
 
     - name: Package Lambda Function
@@ -46,9 +48,7 @@ jobs:
         zip -r image_analyzer.zip image_analyzer.py
 
     - name: Terraform Plan
-      run: |
-        terraform init
-        terraform plan -out=tfplan
+      run: terraform plan -out=tfplan
       working-directory: terraform
 
     - name: Upload Lambda Artifact
