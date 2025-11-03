@@ -33,9 +33,9 @@ resource "random_id" "bucket_suffix" {
 
 # DynamoDB table for image metadata
 resource "aws_dynamodb_table" "image_metadata" {
-  name           = "${var.project_name}-image-metadata"
-  billing_mode   = "PAY_PER_REQUEST"
-  hash_key       = "image_id"
+  name         = "${var.project_name}-image-metadata"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "image_id"
 
   attribute {
     name = "image_id"
@@ -129,9 +129,9 @@ data "archive_file" "lambda_zip" {
 resource "aws_lambda_function" "image_analyzer" {
   filename         = data.archive_file.lambda_zip.output_path
   function_name    = "${var.project_name}-image-analyzer"
-  role            = aws_iam_role.lambda_role.arn
-  handler         = "image_analyzer.lambda_handler"
-  runtime         = "python3.9"
+  role             = aws_iam_role.lambda_role.arn
+  handler          = "image_analyzer.lambda_handler"
+  runtime          = "python3.9"
   source_code_hash = data.archive_file.lambda_zip.output_base64sha256
 
   environment {
