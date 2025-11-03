@@ -14,9 +14,6 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     
-    env:
-      AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
-    
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -29,37 +26,44 @@ jobs:
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v4
       with:
-        role-to-assume: ${{ env.AWS_ROLE_ARN }}
-        role-session-name: GitHubActions
+        role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
         aws-region: us-east-1
-
-    - name: Terraform Init
-      run: terraform init
-      working-directory: terraform
 
     - name: Terraform Format Check
       run: terraform fmt -check -recursive
       working-directory: terraform
 
     - name: Terraform Validate
-      run: terraform validate
+      run: |
+        terraform init
+        terraform validate
       working-directory: terraform
 
     - name: Package Lambda Function
+      working-directory: lambda
       run: |
-        cd lambda
+        # create the zip in the lambda/ directory
         zip -r image_analyzer.zip image_analyzer.py
+        # show the generated file for debug
+        ls -la
 
     - name: Terraform Plan
-      run: terraform plan -detailed-exitcode -out=tfplan || [[ $? -eq 2 ]]
+      run: |
+        terraform init
+        terraform plan -out=tfplan
       working-directory: terraform
 
     - name: Upload Lambda Artifact
       if: github.ref == 'refs/heads/main'
-      run: |
-        BUCKET_NAME=$(terraform output -raw lambda_artifacts_bucket_name)
-        aws s3 cp lambda/image_analyzer.zip s3://$BUCKET_NAME/
       working-directory: terraform
+      run: |
+        # Ensure the zip exists relative to the terraform directory
+        echo "Listing expected artifact paths for debug:"
+        ls -la ../lambda || true
+        ls -la lambda || true
+        BUCKET_NAME=$(terraform output -raw lambda_artifacts_bucket_name)
+        aws s3 cp ../lambda/image_analyzer.zip s3://$BUCKET_NAME/
+      # working-directory is terraform so we upload ../lambda/image_analyzer.zip
 
     - name: Terraform Apply
       if: github.ref == 'refs/heads/main'
