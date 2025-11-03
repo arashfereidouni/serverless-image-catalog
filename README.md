@@ -42,9 +42,27 @@ Query results from DynamoDB:
 aws dynamodb scan --table-name serverless-image-catalog-image-metadata
 ```
 
+## CI/CD Setup
+
+### 1. Deploy OIDC Role
+```bash
+cd terraform
+terraform apply
+```
+
+### 2. Configure GitHub Secrets
+Add the GitHub Actions role ARN to repository secrets:
+```
+AWS_ROLE_ARN=<github_actions_role_arn_from_terraform_output>
+```
+
+### 3. Automatic Deployment
+Push to main branch triggers automatic deployment via GitHub Actions.
+
 ## Resources Created
 
 - S3 buckets for images and Lambda artifacts
 - Lambda function with Rekognition integration
 - DynamoDB table for metadata storage
 - IAM roles with least-privilege permissions
+- GitHub Actions OIDC role for secure CI/CD
