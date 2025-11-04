@@ -59,6 +59,24 @@ AWS_ROLE_ARN=<github_actions_role_arn_from_terraform_output>
 ### 3. Automatic Deployment
 Push to main branch triggers automatic deployment via GitHub Actions.
 
+## Features
+
+- **Automatic Processing**: S3 event triggers Lambda on image upload
+- **AI Analysis**: AWS Rekognition detects labels with 80% confidence threshold
+- **Metadata Storage**: DynamoDB stores image URLs, labels, and confidence scores
+- **CI/CD Pipeline**: GitHub Actions with OIDC authentication
+- **Supported Formats**: .jpg and .png images
+
+## Troubleshooting
+
+### Lambda Errors
+- **Float types not supported**: Fixed by converting confidence scores to Decimal
+- **Missing permissions**: Ensure IAM role has Rekognition, S3, and DynamoDB access
+
+### CI/CD Issues
+- **AWS credentials error**: Verify `AWS_ROLE_ARN` secret is configured
+- **Terraform plan changes**: Pipeline continues with exit code 2 (changes detected)
+
 ## Resources Created
 
 - S3 buckets for images and Lambda artifacts
