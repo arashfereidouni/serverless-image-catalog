@@ -2,6 +2,7 @@ import json
 import boto3
 import os
 from urllib.parse import unquote_plus
+from decimal import Decimal
 
 rekognition = boto3.client('rekognition')
 dynamodb = boto3.resource('dynamodb')
@@ -27,7 +28,7 @@ def lambda_handler(event, context):
                 'image_id': key,
                 'image_url': f's3://{bucket}/{key}',
                 'labels': labels,
-                'confidence_scores': {label['Name']: label['Confidence'] for label in response['Labels']}
+                'confidence_scores': {label['Name']: Decimal(str(label['Confidence'])) for label in response['Labels']}
             }
         )
     
